@@ -1,7 +1,7 @@
 'use strict'
 
 const test = require('tape')
-const ClientStore = require('../../src/store')
+const { ClientStore } = require('../../src/index')
 
 
 test('client store and retrieve test', t => {
