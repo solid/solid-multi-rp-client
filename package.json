@@ -37,7 +37,9 @@
     "url": "https://github.com/solid/solid-multi-rp-client/issues"
   },
   "homepage": "https://github.com/solid/solid-multi-rp-client",
-  "dependencies": {},
+  "dependencies": {
+    "anvil-connect-express": "^0.3.2"
+  },
   "devDependencies": {
     "standard": "^5.4.1",
     "tape": "^4.6.2"
