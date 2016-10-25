@@ -13,7 +13,9 @@ test('client store and retrieve test', t => {
     }
   }
   store.put(expressClient)
-    .then(() => {
+    .then((storedClient) => {
+      t.equal(storedClient, expressClient,
+        'store.put() should return the stored client')
       return store.get(issuerUrl)
     })
     .then(retrievedClient => {

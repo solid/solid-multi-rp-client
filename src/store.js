@@ -6,6 +6,7 @@ module.exports = class OIDCClientStore {
     return Promise.resolve()
       .then(() => {
         this.clients[expressClient.client.issuer] = expressClient
+        return expressClient
       })
   }
   get (issuer) {

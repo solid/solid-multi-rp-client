@@ -1,5 +1,7 @@
 'use strict'
 const ClientStore = require('./store')
+const OIDCExpressClient = require('anvil-connect-express')
+const DEFAULT_MAX_AGE = 86400
 
 class MultiRpClient {
   constructor (options = {}) {
@@ -8,63 +10,79 @@ class MultiRpClient {
     this.debug = options.debug || console.log.bind(console)
   }
 
-  /**
-   * @method clientRegistrationConfig
-   * @static
-   * @param issuer {String} URL of the OIDC Provider / issuer.
-   * @param redirectUris {Array<String>} List of allowed URIs to which the
-   *   provider will redirect users after login etc.
-   * @param [postLogoutUris] {Array<String>}
-   * @return {Object} OIDC Client registration config options
-   */
-  static clientRegistrationConfig (issuer, redirectUris, postLogoutUris) {
-    let clientName = `Solid OIDC Client for ${issuer}`
-    let config = {
-      client_name: clientName,
-      // client_uri: 'https://github.com/solid/node-solid-server',
-      // logo_uri: 'solid logo',
-      // post_logout_redirect_uris: [ '...' ],
-      default_max_age: 86400, // one day in seconds
-      // trusted: true,
-      // Type of token requests that this client is gonna make
-      grant_types: ['authorization_code', 'implicit',
-        'refresh_token', 'client_credentials'],
-      issuer: issuer,
-      redirect_uris: redirectUris,
-      response_types: ['code', 'id_token token', 'code id_token token'],
-      scope: 'openid profile'
-    }
-    if (postLogoutUris) {
-      config.post_logout_redirect_uris = postLogoutUris
-    }
-    return config
-  }
-
-  clientForIssuer (issuer) {
+  clientForIssuer (issuerUri) {
     let debug = this.debug
-    // var trustedClient = this.trustedClient.client
-    // var baseRedirectUri = trustedClient.redirect_uri
-    // var isTrustedClient = issuer === trustedClient.issuer
-    return this.store.get(issuer)
-      .then((client) => {
+    return this.store.get(issuerUri)
+      .then(client => {
         debug('Client fetched for issuer.')
         if (client) {
           return client
         }
         debug('Client not present, initializing new client.')
         // client not already in store, create and register it
-        // let redirectUri = this.redirectUriForIssuer(issuer,
-        //   baseRedirectUri, isTrustedClient)
-        // let clientConfig = {
-        //   issuer: issuer,
-        //   redirect_uri: redirectUri
-        // }
-        // return this.initClient(clientConfig, isTrustedClient)
+        let registrationConfig = this.registrationConfigFor(issuerUri)
+        return this.registerClient(registrationConfig)
+      })
+      .then(registeredClient => {
+        // Store and return the newly registered client
+        return this.store.put(registeredClient)
       })
   }
 
   get localIssuer () {
     return this.localConfig.issuer
+  }
+
+  /**
+   * @method redirectUriForIssuer
+   * @param issuer {string} Issuer URI
+   * @param baseUri {string}
+   * @returns {string}
+   */
+  redirectUriForIssuer (issuerUri, baseUri = this.localConfig.redirect_uri) {
+    let issuerId = encodeURIComponent(issuerUri)
+    return `${baseUri}/${issuerId}`
+  }
+
+  registerClient (config) {
+    let debug = this.debug
+    let oidcExpress = new OIDCExpressClient(config)
+    debug.oidc('Running client.initProvider()...')
+    return oidcExpress.client.initProvider()
+      .then(() => {
+        debug.oidc('Client discovered, JWKs retrieved')
+        if (!oidcExpress.client.client_id) {
+          // Register if you haven't already.
+          debug.oidc('Registering client')
+          return oidcExpress.client.register(config)
+        } else {
+          // Already registered.
+          return oidcExpress
+        }
+      })
+  }
+
+  /**
+   * @param issuer {string} URL of the OIDC Provider / issuer.
+   * @param [config={}] {Object}
+   */
+  registrationConfigFor (issuer, config = {}) {
+    let redirectUri = config.redirect_uri || this.redirectUriForIssuer(issuer)
+    let defaultClientName = `Solid OIDC RP for ${issuer}`
+
+    config.client_name = config.client_name || defaultClientName
+    config.default_max_age = config.default_max_age || DEFAULT_MAX_AGE
+    config.issuer = issuer
+    config.grant_types = config.grant_types ||
+      ['authorization_code', 'implicit', 'refresh_token', 'client_credentials']
+    config.redirect_uris = config.redirect_uris || [ redirectUri ]
+    config.response_types = config.response_types ||
+      ['code', 'id_token token', 'code id_token token']
+    config.scope = config.scope || 'openid profile'
+    // client_uri: 'https://github.com/solid/node-solid-server',
+    // logo_uri: 'solid logo',
+    // post_logout_redirect_uris: [ '...' ],
+    return config
   }
 }
 module.exports = MultiRpClient
