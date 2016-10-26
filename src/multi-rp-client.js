@@ -11,6 +11,52 @@ class MultiRpClient {
   }
 
   /**
+   * Returns the authorization (signin) URL for a given OIDC client (which
+   * is tied to / registered with a specific OIDC Provider).
+   * @method authUrl
+   * @param expressClient {OIDCExpressClient}
+   * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'.
+   * @return {string} Absolute URL for an OIDC auth call (to start either
+   *   the Authorization Code workflow, or the Implicit workflow).
+   */
+  authUrl (expressClient, workflow = 'code') {
+    let debug = this.debug
+    let authParams = {
+      endpoint: 'signin',
+      response_mode: 'query',
+      // response_mode: 'form_post',
+      client_id: expressClient.client.client_id,
+      redirect_uri: expressClient.client.redirect_uri,
+      // state: '...',  // not doing state for the moment
+      scope: 'openid profile'  // not doing 'openid profile' for the moment
+    }
+    if (workflow === 'code') {  // Authorization Code workflow
+      authParams.response_type = 'code'
+    } else if (workflow === 'implicit') {
+      authParams.response_type = 'id_token token'
+      authParams.nonce = '123'  // TODO: Implement proper nonce generation
+    }
+
+    var signinUrl = expressClient.client.authorizationUri(authParams)
+    debug('Signin url: ' + signinUrl)
+    return signinUrl
+  }
+
+  /**
+   * Returns a constructed `/authorization` URL for a given issuer. Used for
+   * starting the OIDC workflow.
+   * @param issuer {string} OIDC Provider URL
+   * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'
+   * @returns {Promise<string>}
+   */
+  authUrlForIssuer (issuer, workflow = 'code') {
+    return this.clientForIssuer(issuer)
+      .then((client) => {
+        return this.authUrl(client, workflow)
+      })
+  }
+
+  /**
    * @method clientForIssuer
    * @param issuerUri {string}
    * @returns {Promise<OIDCExpressClient>}
@@ -70,13 +116,13 @@ class MultiRpClient {
   registerClient (config) {
     let debug = this.debug
     let oidcExpress = new OIDCExpressClient(config)
-    debug.oidc('Running client.initProvider()...')
+    debug('Running client.initProvider()...')
     return oidcExpress.client.initProvider()
       .then(() => {
-        debug.oidc('Client discovered, JWKs retrieved')
+        debug('Client discovered, JWKs retrieved')
         if (!oidcExpress.client.client_id) {
           // Register if you haven't already.
-          debug.oidc('Registering client')
+          debug('Registering client')
           return oidcExpress.client.register(config)
         } else {
           // Already registered.
