@@ -45,8 +45,8 @@ test('MultiRpClient.clientForIssuer() - client exists in store test', t => {
       return multiClient.clientForIssuer(issuer)
     })
     .then(retrievedClient => {
-      t.equal(retrievedClient, expressClient,
-        'If client exists in store, clientForIssuer() should retrieve it')
+      t.equal(retrievedClient.client.issuer, expressClient.client.issuer,
+        'If client config exists in store, clientForIssuer() should retrieve it')
       t.end()
     })
     .catch(err => { t.fail(err) })

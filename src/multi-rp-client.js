@@ -10,9 +10,14 @@ class MultiRpClient {
     this.debug = options.debug || console.log.bind(console)
   }
 
+  /**
+   * @method clientForIssuer
+   * @param issuerUri {string}
+   * @returns {Promise<OIDCExpressClient>}
+   */
   clientForIssuer (issuerUri) {
     let debug = this.debug
-    return this.store.get(issuerUri)
+    return this.loadClient(issuerUri)
       .then(client => {
         debug('Client fetched for issuer.')
         if (client) {
@@ -22,15 +27,33 @@ class MultiRpClient {
         // client not already in store, create and register it
         let registrationConfig = this.registrationConfigFor(issuerUri)
         return this.registerClient(registrationConfig)
+          .then(registeredClient => {
+            // Store and return the newly registered client
+            return this.persistClient(registeredClient)
+          })
       })
-      .then(registeredClient => {
-        // Store and return the newly registered client
-        return this.store.put(registeredClient)
-      })
+  }
+
+  /**
+   * @method loadClient
+   * @param issuerUri {string}
+   * @returns {Promise<OIDCExpressClient>}
+   */
+  loadClient (issuerUri) {
+    return this.store.get(issuerUri)
   }
 
   get localIssuer () {
     return this.localConfig.issuer
+  }
+
+  /**
+   * @method persistClient
+   * @param expressClient {OIDCExpressClient}
+   * @return {Promise<OIDCExpressClient>}
+   */
+  persistClient (expressClient) {
+    return this.store.put(expressClient)
   }
 
   /**

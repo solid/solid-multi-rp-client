@@ -2,25 +2,22 @@
 
 const test = require('tape')
 const { ClientStore } = require('../../src/index')
-
+const OIDCExpressClient = require('anvil-connect-express')
 
 test('client store and retrieve test', t => {
-  let issuerUrl = 'https://oidc.example.com'
+  let issuer = 'https://oidc.example.com'
   let store = new ClientStore()
-  let expressClient = {
-    client: {
-      issuer: issuerUrl
-    }
-  }
+  let expressClient = new OIDCExpressClient({ issuer })
   store.put(expressClient)
     .then((storedClient) => {
       t.equal(storedClient, expressClient,
         'store.put() should return the stored client')
-      return store.get(issuerUrl)
+      return store.get(issuer)
     })
     .then(retrievedClient => {
-      t.equals(retrievedClient, expressClient,
+      t.equal(retrievedClient.client.issuer, expressClient.client.issuer,
         'Should be able to retrieve the stored client')
       t.end()
     })
+    .catch(err => { t.fail(err) })
 })
