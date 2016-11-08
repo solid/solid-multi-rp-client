@@ -1,8 +1,9 @@
 'use strict'
 
 const test = require('tape')
-const OIDCExpressClient = require('anvil-connect-express')
+const OIDCRelyingParty = require('oidc-rp')
 const { ClientStore, MultiRpClient } = require('../../src/index')
+const sinon = require('sinon')
 
 test('MultiRpClient constructor test', t => {
   let store = new ClientStore()
@@ -37,19 +38,27 @@ test('MultiRpClient.registrationConfigFor() test', t => {
 test('MultiRpClient.clientForIssuer() - client exists in store test', t => {
   let issuer = 'https://oidc.example.com'
   let store = new ClientStore()
-  let expressClient = new OIDCExpressClient({ issuer })
+  let getStub = sinon.stub(store, 'get', (issuer) => {
+    return Promise.resolve(new OIDCRelyingParty({ provider: { url: issuer }}))
+  })
+  let client = new OIDCRelyingParty({ provider: { url: issuer }})
   let multiClient
-  store.put(expressClient)
+  store.put(client)
     .then(() => {
       multiClient = new MultiRpClient({ store })
       return multiClient.clientForIssuer(issuer)
     })
     .then(retrievedClient => {
-      t.equal(retrievedClient.client.issuer, expressClient.client.issuer,
+      t.equal(retrievedClient.issuer, client.issuer,
         'If client config exists in store, clientForIssuer() should retrieve it')
+      t.ok(getStub.calledWith(issuer))
+      getStub.restore()
       t.end()
     })
-    .catch(err => { t.fail(err) })
+    .catch(err => {
+      console.log(err)
+      t.fail(err)
+    })
 })
 
 test('MultiRpClient.redirectUriForIssuer() test', t => {

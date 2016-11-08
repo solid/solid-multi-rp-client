@@ -1,23 +1,21 @@
 'use strict'
 
 const test = require('tape')
-const { ClientStore } = require('../../src/index')
-const OIDCExpressClient = require('anvil-connect-express')
+const ClientStore = require('../../src/store')
+const OIDCRelyingParty = require('oidc-rp')
 
-test('client store and retrieve test', t => {
+test('client store test', t => {
   let issuer = 'https://oidc.example.com'
   let store = new ClientStore()
-  let expressClient = new OIDCExpressClient({ issuer })
-  store.put(expressClient)
+  let client = new OIDCRelyingParty({ provider: { url: issuer }})
+  return store.put(client)
     .then((storedClient) => {
-      t.equal(storedClient, expressClient,
+      t.equal(storedClient, client,
         'store.put() should return the stored client')
-      return store.get(issuer)
-    })
-    .then(retrievedClient => {
-      t.equal(retrievedClient.client.issuer, expressClient.client.issuer,
-        'Should be able to retrieve the stored client')
       t.end()
     })
-    .catch(err => { t.fail(err) })
+    .catch(err => {
+      console.log(err)
+      t.fail(err)
+    })
 })

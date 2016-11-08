@@ -1,14 +1,18 @@
-const OIDCExpressClient = require('anvil-connect-express')
+const OIDCRelyingParty = require('oidc-rp')
 
 module.exports = class OIDCClientStore {
   constructor () {
     this.clients = {}
   }
-  put (expressClient) {
+  put (client) {
+    if (!client) {
+      return Promise.reject(new Error('Cannot store null client'))
+    }
     return Promise.resolve()
       .then(() => {
-        this.clients[expressClient.client.issuer] = expressClient.client.serialize()
-        return expressClient
+        let issuer = client.provider.url
+        this.clients[issuer] = client.serialize()
+        return client
       })
   }
   get (issuer) {
@@ -16,7 +20,7 @@ module.exports = class OIDCClientStore {
       .then(() => {
         if (issuer in this.clients) {
           let clientConfig = JSON.parse(this.clients[issuer])
-          return new OIDCExpressClient(clientConfig)
+          return OIDCRelyingParty.from(clientConfig)
         } else {
           return null
         }

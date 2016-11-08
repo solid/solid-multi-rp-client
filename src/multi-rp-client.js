@@ -1,6 +1,6 @@
 'use strict'
 const ClientStore = require('./store')
-const OIDCExpressClient = require('anvil-connect-express')
+const OIDCRelyingParty = require('oidc-rp')
 const DEFAULT_MAX_AGE = 86400
 
 class MultiRpClient {
@@ -14,19 +14,19 @@ class MultiRpClient {
    * Returns the authorization (signin) URL for a given OIDC client (which
    * is tied to / registered with a specific OIDC Provider).
    * @method authUrl
-   * @param expressClient {OIDCExpressClient}
+   * @param client {RelyingParty}
    * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'.
    * @return {string} Absolute URL for an OIDC auth call (to start either
    *   the Authorization Code workflow, or the Implicit workflow).
    */
-  authUrl (expressClient, workflow = 'code') {
+  authUrl (client, workflow = 'code') {
     let debug = this.debug
     let authParams = {
       endpoint: 'signin',
       response_mode: 'query',
       // response_mode: 'form_post',
-      client_id: expressClient.client.client_id,
-      redirect_uri: expressClient.client.redirect_uri,
+      client_id: client.client_id,
+      redirect_uri: client.redirect_uri,
       // state: '...',  // not doing state for the moment
       scope: 'openid profile'  // not doing 'openid profile' for the moment
     }
@@ -37,7 +37,7 @@ class MultiRpClient {
       authParams.nonce = '123'  // TODO: Implement proper nonce generation
     }
 
-    var signinUrl = expressClient.client.authorizationUri(authParams)
+    var signinUrl = client.authorizationUri(authParams)
     debug('Signin url: ' + signinUrl)
     return signinUrl
   }
@@ -115,20 +115,8 @@ class MultiRpClient {
 
   registerClient (config) {
     let debug = this.debug
-    let oidcExpress = new OIDCExpressClient(config)
-    debug('Running client.initProvider()...')
-    return oidcExpress.client.initProvider()
-      .then(() => {
-        debug('Client discovered, JWKs retrieved')
-        if (!oidcExpress.client.client_id) {
-          // Register if you haven't already.
-          debug('Registering client')
-          return oidcExpress.client.register(config)
-        } else {
-          // Already registered.
-          return oidcExpress
-        }
-      })
+    debug('new OIDCRelyingParty.register()', config)
+    return OIDCRelyingParty.register(config.issuer, config, {})
   }
 
   /**
