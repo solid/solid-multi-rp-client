@@ -5,7 +5,7 @@ const DEFAULT_MAX_AGE = 86400
 
 class MultiRpClient {
   constructor (options = {}) {
-    this.store = options.store || new ClientStore()
+    this.store = new ClientStore(options.store)
     this.localConfig = options.localConfig || {}
     this.debug = options.debug || console.log.bind(console)
   }
@@ -15,31 +15,33 @@ class MultiRpClient {
    * is tied to / registered with a specific OIDC Provider).
    * @method authUrl
    * @param client {RelyingParty}
+   * @param session {Session} req.session or similar
    * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'.
    * @return {string} Absolute URL for an OIDC auth call (to start either
    *   the Authorization Code workflow, or the Implicit workflow).
    */
-  authUrl (client, workflow = 'code') {
-    let debug = this.debug
+  authUrl (client, session, workflow = 'code') {
+    // let debug = this.debug
     let authParams = {
-      endpoint: 'signin',
-      response_mode: 'query',
+      // endpoint: 'signin',
+      // response_mode: 'query',
       // response_mode: 'form_post',
-      client_id: client.client_id,
-      redirect_uri: client.redirect_uri,
+      // client_id: client.client_id,
+      redirect_uri: client.registration.redirect_uris[0]
       // state: '...',  // not doing state for the moment
-      scope: 'openid profile'  // not doing 'openid profile' for the moment
+      // scope: 'openid profile'
     }
     if (workflow === 'code') {  // Authorization Code workflow
       authParams.response_type = 'code'
     } else if (workflow === 'implicit') {
       authParams.response_type = 'id_token token'
-      authParams.nonce = '123'  // TODO: Implement proper nonce generation
     }
-
-    var signinUrl = client.authorizationUri(authParams)
-    debug('Signin url: ' + signinUrl)
-    return signinUrl
+    // console.log('client.createRequest(). client:', client.serialize())
+    return client.createRequest(authParams, session)
+      .then(uri => {
+        console.log(uri)
+        return uri
+      })
   }
 
   /**
@@ -49,10 +51,10 @@ class MultiRpClient {
    * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'
    * @returns {Promise<string>}
    */
-  authUrlForIssuer (issuer, workflow = 'code') {
+  authUrlForIssuer (issuer, session, workflow = 'code') {
     return this.clientForIssuer(issuer)
       .then((client) => {
-        return this.authUrl(client, workflow)
+        return this.authUrl(client, session, workflow)
       })
   }
 
@@ -109,6 +111,9 @@ class MultiRpClient {
    * @returns {string}
    */
   redirectUriForIssuer (issuerUri, baseUri = this.localConfig.redirect_uri) {
+    if (!baseUri) {
+      throw new Error('Cannot form redirect uri - base uri is missing')
+    }
     let issuerId = encodeURIComponent(issuerUri)
     return `${baseUri}/${issuerId}`
   }

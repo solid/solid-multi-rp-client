@@ -38,7 +38,8 @@
   },
   "homepage": "https://github.com/solid/solid-multi-rp-client",
   "dependencies": {
-    "oidc-rp": "0.0.0"
+    "kvplus-files": "0.0.1",
+    "oidc-rp": "git://github.com/anvilresearch/oidc-rp.git#dz_serialize"
   },
   "devDependencies": {
     "sinon": "^1.17.6",
