@@ -1,9 +1,12 @@
 'use strict'
 
 const test = require('tape')
-const OIDCRelyingParty = require('oidc-rp')
-const { ClientStore, MultiRpClient } = require('../../src/index')
 const sinon = require('sinon')
+
+
+const OIDCRelyingParty = require('oidc-rp')
+const MultiRpClient = require('../../src/index')
+const ClientStore = require('../../src/client-store')
 
 const storeBasePath = './test/store/'
 const storeOptions = { path: storeBasePath }
@@ -25,7 +28,10 @@ test('MultiRpClient constructor test', t => {
   let localConfig = {
     issuer: localIssuer
   }
-  let options = { store: storeOptions, localConfig }
+  let options = {
+    path: storeBasePath,
+    localConfig
+  }
   let multiClient = new MultiRpClient(options)
   t.equal(multiClient.store.backend.path, storeBasePath)
   t.equal(multiClient.localConfig, localConfig)

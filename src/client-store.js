@@ -3,13 +3,29 @@ const KVPFileStore = require('kvplus-files')
 const COLLECTION_NAME = 'clients'
 
 module.exports = class OIDCClientStore {
+  /**
+   * @constructor
+   *
+   * @param [options={}] {Object}
+   *
+   * @param [options.collectionName='clients'] {string}
+   *
+   * @param [options.backend] {KVPFileStore} Either pass in a backend store
+   * @param [options.path] {string} Or initialize the store from path.
+   */
   constructor (options = {}) {
-    let backend = options.backend || new KVPFileStore(options)
-    backend.serialize = (client) => { return client.serialize() }
-    backend.deserialize = (data) => { return JSON.parse(data) }
-    this.backend = backend
     this.collectionName = options.collectionName || COLLECTION_NAME
+
+    this.backend = options.backend ||
+      new KVPFileStore({
+        path: options.path,
+        collections: [ this.collectionName ]
+      })
+
+    this.backend.serialize = (client) => { return client.serialize() }
+    this.backend.deserialize = (data) => { return JSON.parse(data) }
   }
+
   del (client) {
     if (!this.backend) {
       return Promise.reject(new Error('Client store not configured'))
@@ -20,6 +36,7 @@ module.exports = class OIDCClientStore {
     let issuer = encodeURIComponent(client.provider.url)
     return this.backend.del(this.collectionName, issuer)
   }
+
   put (client) {
     if (!this.backend) {
       return Promise.reject(new Error('Client store not configured'))
@@ -34,6 +51,7 @@ module.exports = class OIDCClientStore {
         return client
       })
   }
+
   get (issuer) {
     if (!this.backend) {
       return Promise.reject(new Error('Client store not configured'))

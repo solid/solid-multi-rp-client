@@ -1,18 +1,38 @@
 'use strict'
-const ClientStore = require('./store')
+const ClientStore = require('./client-store')
 const OIDCRelyingParty = require('oidc-rp')
 const DEFAULT_MAX_AGE = 86400
 
 class MultiRpClient {
+  /**
+   * @constructor
+   * @param [options={}] {Object}
+   *
+   * @param [options.localConfig={}] {Object}
+   * @param [options.localConfig.issuer] {string}
+   * @param [options.localConfig.redirect_uri] {string}
+   * @param [options.localConfig.post_logout_redirect_uris] {Array<string>}
+   *
+   * Needed to initialize the ClientStore:
+   *
+   * @param [options.backend] {KVPFileStore} Either pass in a backend store
+   * @param [options.path] {string} Or initialize the store from path.
+   * @param [options.collectionName='clients'] {string}
+   *
+   * @param [options.debug] {Function}
+   */
   constructor (options = {}) {
-    this.store = new ClientStore(options.store)
+    this.store = new ClientStore(options)
+
     this.localConfig = options.localConfig || {}
+
     this.debug = options.debug || console.log.bind(console)
   }
 
   /**
-   * Returns the authorization (signin) URL for a given OIDC client (which
+   * Returns the authorization (login) URL for a given OIDC client (which
    * is tied to / registered with a specific OIDC Provider).
+   *
    * @method authUrl
    * @param client {RelyingParty}
    * @param session {Session} req.session or similar
@@ -47,6 +67,7 @@ class MultiRpClient {
   /**
    * Returns a constructed `/authorization` URL for a given issuer. Used for
    * starting the OIDC workflow.
+   *
    * @param issuer {string} OIDC Provider URL
    * @param workflow {string} OIDC workflow type, one of 'code' or 'implicit'
    * @returns {Promise<string>}
@@ -140,6 +161,8 @@ class MultiRpClient {
     config.redirect_uris = config.redirect_uris || [ redirectUri ]
     config.response_types = config.response_types ||
       ['code', 'id_token token', 'code id_token token']
+    config.post_logout_redirect_uris = config.post_logout_redirect_uris ||
+      this.localConfig.post_logout_redirect_uris || []
     config.scope = config.scope || 'openid profile'
     // client_uri: 'https://github.com/solid/node-solid-server',
     // logo_uri: 'solid logo',

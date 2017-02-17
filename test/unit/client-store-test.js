@@ -3,7 +3,7 @@
 const test = require('tape')
 const KVPFileStore = require('kvplus-files')
 
-const ClientStore = require('../../src/store')
+const ClientStore = require('../../src/client-store')
 const OIDCRelyingParty = require('oidc-rp')
 
 const storeBasePath = './test/store/'
