@@ -45,7 +45,7 @@ module.exports = class OIDCClientStore {
       return Promise.reject(new Error('Cannot store null client'))
     }
     let issuer = encodeURIComponent(client.provider.url)
-    console.log('PATH:', this.backend.path)
+
     return this.backend.put(this.collectionName, issuer, client)
       .then(() => {
         return client

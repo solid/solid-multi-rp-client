@@ -59,7 +59,6 @@ class MultiRpClient {
     // console.log('client.createRequest(). client:', client.serialize())
     return client.createRequest(authParams, session)
       .then(uri => {
-        console.log(uri)
         return uri
       })
   }
@@ -140,8 +139,8 @@ class MultiRpClient {
   }
 
   registerClient (config) {
-    let debug = this.debug
-    debug('new OIDCRelyingParty.register()', config)
+    // let debug = this.debug
+    // debug('new OIDCRelyingParty.register()', config)
     return OIDCRelyingParty.register(config.issuer, config, {})
   }
 
