@@ -72,9 +72,14 @@ class MultiRpClient {
    * @returns {Promise<string>}
    */
   authUrlForIssuer (issuer, session, workflow = 'code') {
+    let debug = this.debug
+
     return this.clientForIssuer(issuer)
       .then((client) => {
         return this.authUrl(client, session, workflow)
+      })
+      .catch(error => {
+        debug('Error in authUrlForIssuer(): ', error)
       })
   }
 
@@ -87,17 +92,23 @@ class MultiRpClient {
     let debug = this.debug
     return this.loadClient(issuerUri)
       .then(client => {
-        debug('Client fetched for issuer.')
         if (client) {
+          debug(`Client fetched for issuer ${issuerUri}`)
           return client
         }
-        debug('Client not present, initializing new client.')
+        debug(`Client not present for issuer ${issuerUri}, initializing new client`)
         // client not already in store, create and register it
         let registrationConfig = this.registrationConfigFor(issuerUri)
         return this.registerClient(registrationConfig)
+          .catch(error => {
+            debug('Error registering a new client: ', error)
+          })
           .then(registeredClient => {
             // Store and return the newly registered client
             return this.persistClient(registeredClient)
+          })
+          .catch(error => {
+            debug('Error persisting registered client: ', error)
           })
       })
   }
@@ -128,7 +139,10 @@ class MultiRpClient {
    * @method redirectUriForIssuer
    * @param issuer {string} Issuer URI
    * @param baseUri {string}
-   * @returns {string}
+   *
+   * @throws {Error} If baseUri is missing.
+   *
+   * @return {string}
    */
   redirectUriForIssuer (issuerUri, baseUri = this.localConfig.redirect_uri) {
     if (!baseUri) {
@@ -141,6 +155,8 @@ class MultiRpClient {
   registerClient (config) {
     // let debug = this.debug
     // debug('new OIDCRelyingParty.register()', config)
+    this.debug('Registering new client for issuer ', config.issuer)
+
     return OIDCRelyingParty.register(config.issuer, config, {})
   }
 
@@ -150,6 +166,7 @@ class MultiRpClient {
    */
   registrationConfigFor (issuer, config = {}) {
     let redirectUri = config.redirect_uri || this.redirectUriForIssuer(issuer)
+
     let defaultClientName = `Solid OIDC RP for ${issuer}`
 
     config.client_name = config.client_name || defaultClientName

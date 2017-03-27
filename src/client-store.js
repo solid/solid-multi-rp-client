@@ -23,7 +23,16 @@ module.exports = class OIDCClientStore {
       })
 
     this.backend.serialize = (client) => { return client.serialize() }
-    this.backend.deserialize = (data) => { return JSON.parse(data) }
+    this.backend.deserialize = (data) => {
+      let result
+      try {
+        result = JSON.parse(data)
+      } catch (error) {
+        console.log(`Error parsing JSON at '${this.backend.path}', ` +
+          `collection '${this.collectionName}': `, error)
+      }
+      return result
+    }
   }
 
   del (client) {
@@ -63,6 +72,10 @@ module.exports = class OIDCClientStore {
           return OIDCRelyingParty.from(result)
         }
         return result
+      })
+      .catch(error => {
+        console.error('Error in clientStore.get() while loading a RelyingParty:',
+          error)
       })
   }
 }
