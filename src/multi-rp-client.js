@@ -1,6 +1,6 @@
 'use strict'
 const ClientStore = require('./client-store')
-const OIDCRelyingParty = require('@trust/oidc-rp')
+const OIDCRelyingParty = require('oidc-rp')
 const DEFAULT_MAX_AGE = 86400
 
 class MultiRpClient {

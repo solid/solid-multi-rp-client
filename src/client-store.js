@@ -1,4 +1,4 @@
-const OIDCRelyingParty = require('@trust/oidc-rp')
+const OIDCRelyingParty = require('oidc-rp')
 const KVPFileStore = require('kvplus-files')
 const COLLECTION_NAME = 'clients'
 
