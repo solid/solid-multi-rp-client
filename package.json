@@ -42,8 +42,8 @@
     "@trust/oidc-rp": "^0.2.0"
   },
   "devDependencies": {
-    "sinon": "^1.17.7",
-    "standard": "^8.6.0",
+    "sinon": "^2.2.0",
+    "standard": "^10.0.2",
     "tape": "^4.6.3"
   },
   "standard": {
