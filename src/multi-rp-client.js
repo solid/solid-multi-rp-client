@@ -80,6 +80,7 @@ class MultiRpClient {
       })
       .catch(error => {
         debug('Error in authUrlForIssuer(): ', error)
+        throw error
       })
   }
 
@@ -96,19 +97,23 @@ class MultiRpClient {
           debug(`Client fetched for issuer ${issuerUri}`)
           return client
         }
+
         debug(`Client not present for issuer ${issuerUri}, initializing new client`)
+
         // client not already in store, create and register it
         let registrationConfig = this.registrationConfigFor(issuerUri)
         return this.registerClient(registrationConfig)
           .catch(error => {
             debug('Error registering a new client: ', error)
+            throw error
           })
           .then(registeredClient => {
             // Store and return the newly registered client
             return this.persistClient(registeredClient)
-          })
-          .catch(error => {
-            debug('Error persisting registered client: ', error)
+              .catch(error => {
+                debug('Error persisting registered client: ', error)
+                throw error
+              })
           })
       })
   }
