@@ -51,7 +51,7 @@ class MultiRpClient {
       // state: '...',  // not doing state for the moment
       // scope: 'openid profile'
     }
-    if (workflow === 'code') {  // Authorization Code workflow
+    if (workflow === 'code') { // Authorization Code workflow
       authParams.response_type = 'code'
     } else if (workflow === 'implicit') {
       authParams.response_type = 'id_token token'
