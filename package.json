@@ -39,13 +39,13 @@
   },
   "homepage": "https://github.com/solid/solid-multi-rp-client",
   "dependencies": {
-    "@solid/oidc-rp": "^0.11.4",
+    "@solid/oidc-rp": "^0.11.5",
     "kvplus-files": "0.0.4"
   },
   "devDependencies": {
-    "sinon": "^9.2.1",
+    "sinon": "^9.2.4",
     "standard": "^16.0.3",
-    "tape": "^5.0.1"
+    "tape": "^5.1.1"
   },
   "standard": {
     "globals": []
